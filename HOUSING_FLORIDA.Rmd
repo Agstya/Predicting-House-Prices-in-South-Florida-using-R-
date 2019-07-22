@@ -1,0 +1,166 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+# Exploring Data
+```{r}
+house <- read.csv("C:/Users/Agastya Bhavana/Videos/Spring/Statistics/8/housing_training_data.csv")
+head(house[1:4])
+```
+
+## Scatter Plots
+```{r}
+pairs(house, col = "purple", pch = 19, cex = 0.1, lower.panel = NULL)
+
+```
+## Correlation
+```{r}
+library(GGally)
+ggcorr(house)
+```
+## Box Plots
+```{r}
+for (x in names(house)) {
+  if (x != "price") {
+    boxplot(as.formula(paste("price ~ ",x)), col=c("gold","darkgreen"), xlab = x, ylab = "price", main = x, data = house)
+  }
+}
+```
+## Histograms
+```{r}
+hist(house$price, main = "price" ,
+    col = c("blue", "cadetblue1", "lightcoral", "light green","yellow","purple"))
+```
+
+```{r}
+hist(house$age, main = "age")
+```
+# Preprocessing
+```{r}
+# Outlier processing: Caping, imputing
+cutoff = 1.5
+q1 <- quantile(house$price, 0.25, na.rm=TRUE)
+q3 <- quantile(house$price, 0.75, na.rm=TRUE)
+iqr <- q3 - q1
+lower_bound <- q1 - (iqr * cutoff)
+upper_bound <- q3 + (iqr * cutoff)
+lower_bound
+upper_bound
+```
+
+```{r}
+house <- within(house, {price = ifelse(price < lower_bound, lower_bound, price)
+price = ifelse(price > upper_bound, upper_bound, price)})
+```
+
+```{r}
+hist(house$price, main = "price" ,
+    col = c("blue", "cadetblue1", "lightcoral", "light green","yellow","purple"))
+```
+
+Transformation
+```{r}
+# Transformation
+house$price_t <- (house$price)^(-1.5)
+house$sqft_t <- log(house$sqft)
+house$beds_t <- log(house$beds)
+house$baths_t <- log(house$baths + 1)
+house$heat_t <- log(house$heat +1) 
+house$style_t <- log(house$style + 1)
+house$garage_t <- log(house$garage + 1)
+house$basement_t <- log(house$basement + 1)
+house$age_t <- log(house$age)
+house$fire_t <- log(house$fire + 1)
+house$school_t <- log(house$school + 1)
+```
+
+# Modeling
+```{r}
+model2 <- lm(price ~ sqrt(sqft)+factor(beds)+factor(baths)+factor(heat)+log(style+1)+factor(garage)+factor(basement)+log(age)+factor(fire)+factor(school)+ sqrt(sqft)/log(age) ,  data = house)
+summary(model)
+```
+
+```{r}
+
+
+gvlma(model)
+```
+```{r}
+model_t <- lm(price_t ~ sqft_t+beds_t+baths_t+heat_t+style_t+garage_t+basement_t+age_t+fire_t+school_t, data = house)
+summary(model_t)
+#gvlma(model_t)
+```
+
+```{r}
+library(car)
+residualPlot(model_t)
+```
+
+```{r}
+library(car)
+vif(model_t)
+```
+```{r}
+library(gvlma)
+gvlma(model_t)
+```
+
+```{r}
+# If still need to do something with VIF, can do it manually
+# or
+# library(pedometrics)
+# model_t <- stepVIF(model_t)
+```
+
+```{r}
+summary(model_t)
+```
+# Prediction
+```{r}
+house_test <- read.csv("C:/Users/Agastya Bhavana/Videos/Spring/Statistics/8/housing_test_features.csv")
+head(house_test)
+```
+
+```{r}
+# Transformation of test data
+house_test$sqft_t <- log(house_test$sqft)
+house_test$beds_t <- log(house_test$beds+1)
+house_test$baths_t <- log(house_test$baths + 1)
+house_test$heat_t <- log(house_test$heat +1) 
+house_test$style_t <- log(house_test$style + 1)
+house_test$garage_t <- log(house_test$garage + 1)
+house_test$basement_t <- log(house_test$basement + 1)
+house_test$age_t <- log(house_test$age)
+house_test$fire_t <- log(house_test$fire + 1)
+house_test$school_t <- log(house_test$school + 1)
+head(house_test)
+```
+
+```{r}
+test_result <- predict(model, house_test)
+#test_result <- exp(log(test_result)/(-1.4))
+head(test_result)
+```
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
